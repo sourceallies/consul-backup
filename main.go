@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"bufio"
     "sort"
     "os"
-    "io"
     "strings"
 	"github.com/armon/consul-api"
     "github.com/docopt/docopt-go"
@@ -72,25 +72,26 @@ func restore(ipaddress string, infile string) {
     if err != nil {
     	panic(err)
     }
+	defer file.Close()
 
-    data := make([]byte, 100)
-    _, err = file.Read(data)
-    if err != nil && err != io.EOF { panic(err) }
+		client, _ := consulapi.NewClient(config)
+		kv := client.KV()
 
-    client, _ := consulapi.NewClient(config)
-    kv := client.KV()
+	  in := bufio.NewScanner(file);
+		for in.Scan() {
+			element := in.Text()
+			fmt.Printf("Line: %s\n", element)
+        kvp := strings.SplitN(element, ":", 1)
+			if len(kvp) > 1 {
+				p := &consulapi.KVPair{Key: kvp[0], Value: []byte(kvp[1])}
+				_, err := kv.Put(p, nil)
+				if err != nil {
+					panic(err)
+				}
+			}
 
-    for _, element := range strings.Split(string(data), "\n") {
-        kvp := strings.Split(element, ":")
+	}
 
-        if len(kvp) > 1 {
-            p := &consulapi.KVPair{Key: kvp[0], Value: []byte(kvp[1])}
-            _, err := kv.Put(p, nil)
-            if err != nil {
-                panic(err)
-            }
-        }
-    }
 }
 
 func main() {
