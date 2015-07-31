@@ -79,13 +79,16 @@ func restore(ipaddress string, infile string) {
 	for in.Scan() {
 		element := in.Text()
 		fmt.Printf("Line: %s\n", element)
-		kvp := strings.SplitN(element, ":", 1)
+		kvp := strings.SplitN(element, ":", 2)
 		if len(kvp) > 1 {
+			fmt.Printf("%s, %s", kvp[0], kvp[1])
 			p := &consulapi.KVPair{Key: kvp[0], Value: []byte(kvp[1])}
 			_, err := kv.Put(p, nil)
 			if err != nil {
 				panic(err)
 			}
+		} else {
+			fmt.Printf("Key and value pair not found!")
 		}
 
 	}
